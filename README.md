@@ -1,4 +1,4 @@
-html-form-authentication
-========================
+authentication-form
+===================
 
 HTML form-based authentication Servlet Filter.
