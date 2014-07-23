@@ -51,7 +51,6 @@ import org.apache.http.protocol.HttpContext;
 import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.simple.SimpleSubject;
 import org.everit.osgi.authentication.simple.SimpleSubjectManager;
-import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.resource.ResourceService;
 import org.junit.Assert;
@@ -69,7 +68,6 @@ import org.osgi.service.http.HttpService;
         @Property(name = "authenticationContext.target")
 })
 @Service(value = FormAuthenticationTestComponent.class)
-@TestDuringDevelopment
 public class FormAuthenticationTestComponent {
 
     @Reference(bind = "setHttpService")
