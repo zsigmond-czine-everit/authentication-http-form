@@ -17,6 +17,7 @@
 package org.everit.osgi.authentication.http.form.internal;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -70,23 +71,26 @@ public class FormAuthenticationServlet extends HttpServlet {
         String password = req.getParameter(formParamNamePassword);
 
         // Authentication
-        String authenticatedPrincipal = authenticator.authenticate(username, password);
-        if (authenticatedPrincipal == null) {
+        Optional<String> optionalAuthenticatedPrincipal = authenticator.authenticate(username, password);
+        if (!optionalAuthenticatedPrincipal.isPresent()) {
             logService.log(LogService.LOG_INFO, "Failed to authenticate username '" + username + "'.");
             redirectToFailedUrl(req, resp);
             return;
         }
 
         // Resource ID mapping
-        Long authenticatedResourceId = resourceIdResolver.getResourceId(authenticatedPrincipal);
-        if (authenticatedResourceId == null) {
+        String authenticatedPrincipal = optionalAuthenticatedPrincipal.get();
+        Optional<Long> optionalAuthenticatedResourceId = resourceIdResolver.getResourceId(authenticatedPrincipal);
+        if (!optionalAuthenticatedResourceId.isPresent()) {
             logService.log(LogService.LOG_INFO, "Authenticated username '" + username
-                    + "' (aka mapped principal '" + authenticatedPrincipal + "') cannot be mapped to Resource ID");
+                    + "' (aka mapped principal '" + optionalAuthenticatedPrincipal
+                    + "') cannot be mapped to Resource ID");
             redirectToFailedUrl(req, resp);
             return;
         }
 
         // Store the resource ID in the session
+        Long authenticatedResourceId = optionalAuthenticatedResourceId.get();
         HttpSession httpSession = req.getSession();
         httpSession.setAttribute(AuthenticationFilter.AUTHENTICATED_RESOURCE_ID, authenticatedResourceId);
 
