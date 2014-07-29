@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - HTML form-based authentication.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.authentication.form.internal;
+package org.everit.osgi.authentication.http.form.internal;
 
 import java.io.IOException;
 
@@ -43,22 +43,22 @@ public class FormAuthenticationServlet extends HttpServlet {
 
     private final String formParamNamePassword;
 
-    private final String formParamNameLastAccessedUrl;
+    private final String formParamNameSuccessUrl;
 
-    private final String loginUrl;
+    private final String formParamNameFailedUrl;
 
     public FormAuthenticationServlet(final Authenticator authenticator, final ResourceIdResolver resourceIdResolver,
             final AuthenticationPropagator authenticationPropagator, final LogService logService,
             final String formParamNameUsername, final String formParamNamePassword,
-            final String formParamNameLastAccessedUrl, final String loginUrl) {
+            final String formParamNameSuccessUrl, final String formParamNameFailedUrl) {
         super();
         this.authenticator = authenticator;
         this.resourceIdResolver = resourceIdResolver;
         this.logService = logService;
         this.formParamNameUsername = formParamNameUsername;
         this.formParamNamePassword = formParamNamePassword;
-        this.formParamNameLastAccessedUrl = formParamNameLastAccessedUrl;
-        this.loginUrl = loginUrl;
+        this.formParamNameSuccessUrl = formParamNameSuccessUrl;
+        this.formParamNameFailedUrl = formParamNameFailedUrl;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class FormAuthenticationServlet extends HttpServlet {
         String authenticatedPrincipal = authenticator.authenticate(username, password);
         if (authenticatedPrincipal == null) {
             logService.log(LogService.LOG_INFO, "Failed to authenticate username '" + username + "'.");
-            redirectToLoginUrl(req, resp);
+            redirectToFailedUrl(req, resp);
             return;
         }
 
@@ -82,7 +82,7 @@ public class FormAuthenticationServlet extends HttpServlet {
         if (authenticatedResourceId == null) {
             logService.log(LogService.LOG_INFO, "Authenticated username '" + username
                     + "' (aka mapped principal '" + authenticatedPrincipal + "') cannot be mapped to Resource ID");
-            redirectToLoginUrl(req, resp);
+            redirectToFailedUrl(req, resp);
             return;
         }
 
@@ -90,28 +90,23 @@ public class FormAuthenticationServlet extends HttpServlet {
         HttpSession httpSession = req.getSession();
         httpSession.setAttribute(AuthenticationFilter.AUTHENTICATED_RESOURCE_ID, authenticatedResourceId);
 
-        redirectToLastAccessedUrl(req, resp);
+        redirectToSuccessUrl(req, resp);
     }
 
-    private void redirectToLastAccessedUrl(final HttpServletRequest req, final HttpServletResponse resp)
+    private void redirectToFailedUrl(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
+        String failedUrl = req.getParameter(formParamNameFailedUrl);
+        if (failedUrl != null) {
+            resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            resp.sendRedirect(failedUrl);
+        }
+    }
+
+    private void redirectToSuccessUrl(final HttpServletRequest req, final HttpServletResponse resp)
             throws IOException {
-        String lastAccessedUrl = req.getParameter(formParamNameLastAccessedUrl);
-        if ((lastAccessedUrl == null) || lastAccessedUrl.isEmpty()) {
-            lastAccessedUrl = loginUrl;
+        String successUrl = req.getParameter(formParamNameSuccessUrl);
+        if (successUrl != null) {
+            resp.sendRedirect(successUrl);
         }
-        // TODO URL encode/decode
-        resp.sendRedirect(lastAccessedUrl);
-    }
-
-    private void redirectToLoginUrl(final HttpServletRequest req, final HttpServletResponse resp) throws IOException {
-        String lastAccessedUrl = req.getParameter(formParamNameLastAccessedUrl);
-        String redirectUrl = loginUrl;
-        if ((lastAccessedUrl != null) && !lastAccessedUrl.isEmpty()) {
-            redirectUrl = redirectUrl + "?" + formParamNameLastAccessedUrl + "=" + lastAccessedUrl;
-        }
-        // TODO URL encode/decode
-        resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        resp.sendRedirect(redirectUrl);
     }
 
 }

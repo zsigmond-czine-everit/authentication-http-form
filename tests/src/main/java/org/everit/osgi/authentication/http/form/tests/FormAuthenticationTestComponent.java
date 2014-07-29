@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - HTML form-based authentication tests.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.authentication.form.tests;
+package org.everit.osgi.authentication.http.form.tests;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -129,7 +129,7 @@ public class FormAuthenticationTestComponent {
         List<NameValuePair> parameters = new ArrayList<NameValuePair>();
         parameters.add(new BasicNameValuePair("username", username));
         parameters.add(new BasicNameValuePair("password", password));
-        parameters.add(new BasicNameValuePair("lastAccessedUrl", helloUrl));
+        parameters.add(new BasicNameValuePair("successUrl", helloUrl));
         HttpEntity entity = new UrlEncodedFormEntity(parameters);
         httpPost.setEntity(entity);
         HttpResponse httpResponse = httpClient.execute(httpPost, httpContext);
@@ -164,7 +164,7 @@ public class FormAuthenticationTestComponent {
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 
         hello(httpContext, defaultResourceId);
-        login(httpContext);
+        login(httpContext); // FIXME success and failed URL testing
         hello(httpContext, authenticatedResourceId);
     }
 

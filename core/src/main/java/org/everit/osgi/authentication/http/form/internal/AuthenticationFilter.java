@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - HTML form-based authentication.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.authentication.form.internal;
+package org.everit.osgi.authentication.http.form.internal;
 
 import java.io.IOException;
 

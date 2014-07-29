@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Everit - HTML form-based authentication.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.everit.osgi.authentication.form.internal;
+package org.everit.osgi.authentication.http.form.internal;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -31,7 +31,7 @@ import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
 import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.context.AuthenticationPropagator;
-import org.everit.osgi.authentication.form.FormAuthenticationConstants;
+import org.everit.osgi.authentication.http.form.FormAuthenticationConstants;
 import org.everit.osgi.authenticator.Authenticator;
 import org.everit.osgi.resource.resolver.ResourceIdResolver;
 import org.osgi.framework.BundleContext;
@@ -59,10 +59,10 @@ import org.osgi.service.log.LogService;
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_USERNAME),
         @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_PASSWORD,
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_PASSWORD),
-        @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_LAST_ACCESSED_URL,
-                value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_LAST_ACCESSED_URL),
-        @Property(name = FormAuthenticationConstants.PROP_LOGIN_URL,
-                value = FormAuthenticationConstants.DEFAULT_LOGIN_URL),
+        @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_SUCCESS_URL,
+                value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_SUCCESS_URL),
+        @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_FAILED_URL,
+                value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_FAILED_URL),
         @Property(name = FormAuthenticationConstants.PROP_AUTHENTICATOR),
         @Property(name = FormAuthenticationConstants.PROP_RESOURCE_ID_RESOLVER),
         @Property(name = FormAuthenticationConstants.PROP_AUTHENTICATION_PROPAGATOR),
@@ -111,21 +111,20 @@ public class FormAuthenticationComponent {
         authenticationFilterSR =
                 context.registerService(Filter.class, authenticationFilter, filterProperties);
 
-        String formParamNameUsername =
-                getStringProperty(componentProperties, FormAuthenticationConstants.PROP_FORM_PARAM_NAME_USERNAME);
-        String formParamNamePassword =
-                getStringProperty(componentProperties, FormAuthenticationConstants.PROP_FORM_PARAM_NAME_PASSWORD);
-        String formParamNameLastAccessedUrl =
-                getStringProperty(componentProperties,
-                        FormAuthenticationConstants.PROP_FORM_PARAM_NAME_LAST_ACCESSED_URL);
-        String loginUrl =
-                getStringProperty(componentProperties, FormAuthenticationConstants.PROP_LOGIN_URL);
-        String servletAlias =
-                getStringProperty(componentProperties, HttpWhiteboardConstants.ALIAS);
+        String formParamNameUsername = getStringProperty(componentProperties,
+                FormAuthenticationConstants.PROP_FORM_PARAM_NAME_USERNAME);
+        String formParamNamePassword = getStringProperty(componentProperties,
+                FormAuthenticationConstants.PROP_FORM_PARAM_NAME_PASSWORD);
+        String formParamNameSuccessUrl = getStringProperty(componentProperties,
+                FormAuthenticationConstants.PROP_FORM_PARAM_NAME_SUCCESS_URL);
+        String formParamNameFailedUrl = getStringProperty(componentProperties,
+                FormAuthenticationConstants.PROP_FORM_PARAM_NAME_FAILED_URL);
+        String servletAlias = getStringProperty(componentProperties,
+                HttpWhiteboardConstants.ALIAS);
 
         Servlet formAuthenticationServlet = new FormAuthenticationServlet(authenticator, resourceIdResolver,
                 authenticationPropagator, logService, formParamNameUsername, formParamNamePassword,
-                formParamNameLastAccessedUrl, loginUrl);
+                formParamNameSuccessUrl, formParamNameFailedUrl);
 
         Dictionary<String, Object> servletProperties = new Hashtable<>();
         servletProperties.put(HttpWhiteboardConstants.ALIAS, servletAlias);
