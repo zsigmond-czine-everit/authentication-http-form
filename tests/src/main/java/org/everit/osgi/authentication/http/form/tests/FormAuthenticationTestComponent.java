@@ -51,6 +51,7 @@ import org.apache.http.protocol.HttpContext;
 import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.simple.SimpleSubject;
 import org.everit.osgi.authentication.simple.SimpleSubjectManager;
+import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.resource.ResourceService;
 import org.junit.Assert;
@@ -64,7 +65,8 @@ import org.osgi.service.http.HttpService;
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, value = "junit4"),
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID, value = "FormAuthenticationTest"),
         @Property(name = "httpService.target", value = "(org.osgi.service.http.port=*)"),
-        @Property(name = "setSimpleSubjectManager.target"),
+        @Property(name = "simpleSubjectManager.target"),
+        @Property(name = "resourceService.target"),
         @Property(name = "authenticationContext.target")
 })
 @Service(value = FormAuthenticationTestComponent.class)
@@ -86,6 +88,8 @@ public class FormAuthenticationTestComponent {
 
     private String helloUrl;
 
+    private String failedUrl;
+
     private String loginActionUrl;
 
     private String username = "Aladdin";
@@ -100,6 +104,7 @@ public class FormAuthenticationTestComponent {
     public void activate(final BundleContext context, final Map<String, Object> componentProperties)
             throws Exception {
         helloUrl = "http://localhost:" + port + "/hello";
+        failedUrl = "http://localhost:" + port + "/bello";
         loginActionUrl = "http://localhost:" + port + "/login-action";
 
         long resourceId = resourceService.createResource();
@@ -107,6 +112,7 @@ public class FormAuthenticationTestComponent {
         SimpleSubject simpleSubject = simpleSubjectManager.create(resourceId, username, password);
         authenticatedResourceId = simpleSubject.getResourceId();
         defaultResourceId = authenticationContext.getDefaultResourceId();
+        Thread.sleep(5000); // FIXME waiting for the whiteboard pattern to register the filters and servlets
     }
 
     private void hello(final HttpContext httpContext, final long expectedResourceId)
@@ -123,19 +129,22 @@ public class FormAuthenticationTestComponent {
         Assert.assertEquals(expectedResourceId, Long.valueOf(responseBodyAsString).longValue());
     }
 
-    private void login(final HttpContext httpContext) throws Exception {
+    private void login(final HttpContext httpContext, final String u, final String p, final String s, final String f,
+            final String expectedLocation)
+            throws Exception {
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost(loginActionUrl);
         List<NameValuePair> parameters = new ArrayList<NameValuePair>();
-        parameters.add(new BasicNameValuePair("username", username));
-        parameters.add(new BasicNameValuePair("password", password));
-        parameters.add(new BasicNameValuePair("successUrl", helloUrl));
+        parameters.add(new BasicNameValuePair("username", u));
+        parameters.add(new BasicNameValuePair("password", p));
+        parameters.add(new BasicNameValuePair("successUrl", s));
+        parameters.add(new BasicNameValuePair("failedUrl", f));
         HttpEntity entity = new UrlEncodedFormEntity(parameters);
         httpPost.setEntity(entity);
         HttpResponse httpResponse = httpClient.execute(httpPost, httpContext);
         Assert.assertEquals(HttpServletResponse.SC_MOVED_TEMPORARILY, httpResponse.getStatusLine().getStatusCode());
         Header locationHeader = httpResponse.getFirstHeader("Location");
-        Assert.assertEquals(helloUrl, locationHeader.getValue());
+        Assert.assertEquals(expectedLocation, locationHeader.getValue());
     }
 
     public void setAuthenticationContext(final AuthenticationContext authenticationContext) {
@@ -158,13 +167,15 @@ public class FormAuthenticationTestComponent {
     }
 
     @Test
+    @TestDuringDevelopment
     public void testAccessHelloPage() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         HttpContext httpContext = new BasicHttpContext();
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 
         hello(httpContext, defaultResourceId);
-        login(httpContext); // FIXME success and failed URL testing
+        login(httpContext, username, password + password, helloUrl, failedUrl, failedUrl);
+        login(httpContext, username, password, helloUrl, failedUrl, helloUrl);
         hello(httpContext, authenticatedResourceId);
     }
 

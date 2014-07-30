@@ -20,7 +20,6 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.servlet.Filter;
 import javax.servlet.Servlet;
 
 import org.apache.felix.http.whiteboard.HttpWhiteboardConstants;
@@ -29,13 +28,11 @@ import org.apache.felix.scr.annotations.ConfigurationPolicy;
 import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
-import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.context.AuthenticationPropagator;
 import org.everit.osgi.authentication.http.form.FormAuthenticationConstants;
 import org.everit.osgi.authenticator.Authenticator;
 import org.everit.osgi.resource.resolver.ResourceIdResolver;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.component.annotations.Activate;
@@ -45,16 +42,10 @@ import org.osgi.service.log.LogService;
 @Component(name = FormAuthenticationConstants.SERVICE_FACTORYPID_FORM_AUTHENTICATION, metatype = true,
         configurationFactory = true, policy = ConfigurationPolicy.REQUIRE)
 @Properties({
-        @Property(name = FormAuthenticationConstants.PROP_FILTER_NAME,
-                value = FormAuthenticationConstants.DEFAULT_FILTER_NAME),
-        @Property(name = HttpWhiteboardConstants.PATTERN,
-                value = FormAuthenticationConstants.DEFAULT_PATTERN),
         @Property(name = HttpWhiteboardConstants.ALIAS,
                 value = FormAuthenticationConstants.DEFAULT_ALIAS),
         @Property(name = HttpWhiteboardConstants.CONTEXT_ID,
                 value = FormAuthenticationConstants.DEFAULT_CONTEXT_ID),
-        @Property(name = FormAuthenticationConstants.PROP_RANKING,
-                value = FormAuthenticationConstants.DEFAULT_RANKING),
         @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_USERNAME,
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_USERNAME),
         @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_PASSWORD,
@@ -63,6 +54,8 @@ import org.osgi.service.log.LogService;
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_SUCCESS_URL),
         @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_FAILED_URL,
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_FAILED_URL),
+        @Property(name = FormAuthenticationConstants.PROP_SESSION_ATTR_NAME_AUTHENTICATED_RESOURCE_ID,
+                value = FormAuthenticationConstants.DEFAULT_SESSION_PARAM_NAME_AUTHENTICATED_RESOURCE_ID),
         @Property(name = FormAuthenticationConstants.PROP_AUTHENTICATOR),
         @Property(name = FormAuthenticationConstants.PROP_RESOURCE_ID_RESOLVER),
         @Property(name = FormAuthenticationConstants.PROP_AUTHENTICATION_PROPAGATOR),
@@ -76,40 +69,16 @@ public class FormAuthenticationComponent {
     @Reference(bind = "setResourceIdResolver")
     private ResourceIdResolver resourceIdResolver;
 
-    @Reference(bind = "setAuthenticationContext")
-    private AuthenticationContext authenticationContext;
-
     @Reference(bind = "setAuthenticationPropagator")
     private AuthenticationPropagator authenticationPropagator;
 
     @Reference(bind = "setLogService")
     private LogService logService;
 
-    private ServiceRegistration<Filter> authenticationFilterSR;
-
     private ServiceRegistration<Servlet> formAuthenticationServletSR;
 
     @Activate
     public void activate(final BundleContext context, final Map<String, Object> componentProperties) throws Exception {
-        Filter authenticationFilter = new AuthenticationFilter(authenticationPropagator, authenticationContext,
-                logService);
-
-        String filterName =
-                getStringProperty(componentProperties, FormAuthenticationConstants.PROP_FILTER_NAME);
-        String pattern =
-                getStringProperty(componentProperties, HttpWhiteboardConstants.PATTERN);
-        String contextId =
-                getStringProperty(componentProperties, HttpWhiteboardConstants.CONTEXT_ID);
-        Long ranking =
-                Long.valueOf(getStringProperty(componentProperties, FormAuthenticationConstants.PROP_RANKING));
-
-        Dictionary<String, Object> filterProperties = new Hashtable<>();
-        filterProperties.put(FormAuthenticationConstants.PROP_FILTER_NAME, filterName);
-        filterProperties.put(HttpWhiteboardConstants.PATTERN, pattern);
-        filterProperties.put(HttpWhiteboardConstants.CONTEXT_ID, contextId);
-        filterProperties.put(Constants.SERVICE_RANKING, ranking);
-        authenticationFilterSR =
-                context.registerService(Filter.class, authenticationFilter, filterProperties);
 
         String formParamNameUsername = getStringProperty(componentProperties,
                 FormAuthenticationConstants.PROP_FORM_PARAM_NAME_USERNAME);
@@ -119,12 +88,16 @@ public class FormAuthenticationComponent {
                 FormAuthenticationConstants.PROP_FORM_PARAM_NAME_SUCCESS_URL);
         String formParamNameFailedUrl = getStringProperty(componentProperties,
                 FormAuthenticationConstants.PROP_FORM_PARAM_NAME_FAILED_URL);
+        String sessionAttrNameAuthenticatedResourceId = getStringProperty(componentProperties,
+                FormAuthenticationConstants.PROP_SESSION_ATTR_NAME_AUTHENTICATED_RESOURCE_ID);
         String servletAlias = getStringProperty(componentProperties,
                 HttpWhiteboardConstants.ALIAS);
+        String contextId =
+                getStringProperty(componentProperties, HttpWhiteboardConstants.CONTEXT_ID);
 
         Servlet formAuthenticationServlet = new FormAuthenticationServlet(authenticator, resourceIdResolver,
                 authenticationPropagator, logService, formParamNameUsername, formParamNamePassword,
-                formParamNameSuccessUrl, formParamNameFailedUrl);
+                formParamNameSuccessUrl, formParamNameFailedUrl, sessionAttrNameAuthenticatedResourceId);
 
         Dictionary<String, Object> servletProperties = new Hashtable<>();
         servletProperties.put(HttpWhiteboardConstants.ALIAS, servletAlias);
@@ -135,10 +108,6 @@ public class FormAuthenticationComponent {
 
     @Deactivate
     public void deactivate() {
-        if (authenticationFilterSR != null) {
-            authenticationFilterSR.unregister();
-            authenticationFilterSR = null;
-        }
         if (formAuthenticationServletSR != null) {
             formAuthenticationServletSR.unregister();
             formAuthenticationServletSR = null;
@@ -152,10 +121,6 @@ public class FormAuthenticationComponent {
             throw new ConfigurationException(propertyName, "property not defined");
         }
         return String.valueOf(value);
-    }
-
-    public void setAuthenticationContext(final AuthenticationContext authenticationContext) {
-        this.authenticationContext = authenticationContext;
     }
 
     public void setAuthenticationPropagator(final AuthenticationPropagator authenticationPropagator) {

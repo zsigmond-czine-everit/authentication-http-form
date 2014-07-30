@@ -48,10 +48,13 @@ public class FormAuthenticationServlet extends HttpServlet {
 
     private final String formParamNameFailedUrl;
 
+    private final String sessionAttrNameAuthenticatedResourceId;
+
     public FormAuthenticationServlet(final Authenticator authenticator, final ResourceIdResolver resourceIdResolver,
             final AuthenticationPropagator authenticationPropagator, final LogService logService,
             final String formParamNameUsername, final String formParamNamePassword,
-            final String formParamNameSuccessUrl, final String formParamNameFailedUrl) {
+            final String formParamNameSuccessUrl, final String formParamNameFailedUrl,
+            final String sessionAttrNameAuthenticatedResourceId) {
         super();
         this.authenticator = authenticator;
         this.resourceIdResolver = resourceIdResolver;
@@ -60,6 +63,7 @@ public class FormAuthenticationServlet extends HttpServlet {
         this.formParamNamePassword = formParamNamePassword;
         this.formParamNameSuccessUrl = formParamNameSuccessUrl;
         this.formParamNameFailedUrl = formParamNameFailedUrl;
+        this.sessionAttrNameAuthenticatedResourceId = sessionAttrNameAuthenticatedResourceId;
     }
 
     @Override
@@ -92,7 +96,7 @@ public class FormAuthenticationServlet extends HttpServlet {
         // Store the resource ID in the session
         Long authenticatedResourceId = optionalAuthenticatedResourceId.get();
         HttpSession httpSession = req.getSession();
-        httpSession.setAttribute(AuthenticationFilter.AUTHENTICATED_RESOURCE_ID, authenticatedResourceId);
+        httpSession.setAttribute(sessionAttrNameAuthenticatedResourceId, authenticatedResourceId);
 
         redirectToSuccessUrl(req, resp);
     }
