@@ -48,11 +48,11 @@ public final class FormAuthenticationConstants {
 
     public static final String PROP_FORM_PARAM_NAME_SUCCESS_URL = "form.param.name.success.url";
 
-    public static final String DEFAULT_FORM_PARAM_NAME_SUCCESS_URL = "/successUrl";
+    public static final String DEFAULT_FORM_PARAM_NAME_SUCCESS_URL = "successUrl";
 
     public static final String PROP_FORM_PARAM_NAME_FAILED_URL = "form.param.name.failed.url";
 
-    public static final String DEFAULT_FORM_PARAM_NAME_FAILED_URL = "/failedUrl";
+    public static final String DEFAULT_FORM_PARAM_NAME_FAILED_URL = "failedUrl";
 
     private FormAuthenticationConstants() {
     }

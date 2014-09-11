@@ -58,7 +58,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.simple.SimpleSubject;
 import org.everit.osgi.authentication.simple.SimpleSubjectManager;
-import org.everit.osgi.dev.testrunner.TestDuringDevelopment;
 import org.everit.osgi.dev.testrunner.TestRunnerConstants;
 import org.everit.osgi.resource.ResourceService;
 import org.junit.Assert;
@@ -74,22 +73,25 @@ import org.osgi.framework.BundleContext;
         @Property(name = "resourceService.target"),
         @Property(name = "authenticationContext.target"),
         @Property(name = "helloWorldServlet.target"),
-        @Property(name = "belloWorldServlet.target"),
         @Property(name = "formAuthenticationServlet.target"),
         @Property(name = "sessionAuthenticationFilter.target")
 })
 @Service(value = FormAuthenticationTestComponent.class)
 public class FormAuthenticationTestComponent {
 
-    private static final String LOGIN_ACTION = "/login-action";
+    private static final String LOGIN_SUCCESS_ALIAS = "/login-success.html";
 
-    private static final String BELLO_SERVLET_ALIAS = "/bello";
+    private static final String LOGIN_FAILED_ALIAS = "/login-failed.html";
+
+    private static final String LOGIN_ACTION = "/login-action";
 
     private static final String HELLO_SERVLET_ALIAS = "/hello";
 
     private static final String USERNAME = "Aladdin";
 
     private static final String PASSWORD = "open sesame";
+
+    private static final String WRONG_PASSWORD = PASSWORD + PASSWORD;
 
     @Reference(bind = "setSimpleSubjectManager")
     private SimpleSubjectManager simpleSubjectManager;
@@ -116,9 +118,11 @@ public class FormAuthenticationTestComponent {
 
     private String helloUrl;
 
-    private String failedUrl;
-
     private String loginActionUrl;
+
+    private String loginFailedUrl;
+
+    private String loginSuccessUrl;
 
     private long authenticatedResourceId;
 
@@ -136,8 +140,6 @@ public class FormAuthenticationTestComponent {
         servletContextHandler.addServlet(
                 new ServletHolder("helloWorldServlet", helloWorldServlet), HELLO_SERVLET_ALIAS);
         servletContextHandler.addServlet(
-                new ServletHolder("belloWorldServlet", belloWorldServlet), BELLO_SERVLET_ALIAS);
-        servletContextHandler.addServlet(
                 new ServletHolder("formAuthenticationServlet", formAuthenticationServlet), LOGIN_ACTION);
 
         testServer.start();
@@ -146,8 +148,9 @@ public class FormAuthenticationTestComponent {
         String testServerURL = testServerURI.substring(0, testServerURI.length() - 1);
 
         helloUrl = testServerURL + HELLO_SERVLET_ALIAS;
-        failedUrl = testServerURL + BELLO_SERVLET_ALIAS;
         loginActionUrl = testServerURL + LOGIN_ACTION;
+        loginFailedUrl = testServerURL + LOGIN_FAILED_ALIAS;
+        loginSuccessUrl = testServerURL + LOGIN_SUCCESS_ALIAS;
 
         long resourceId = resourceService.createResource();
         simpleSubjectManager.delete(USERNAME);
@@ -178,16 +181,16 @@ public class FormAuthenticationTestComponent {
         Assert.assertEquals(expectedResourceId, Long.valueOf(responseBodyAsString).longValue());
     }
 
-    private void login(final HttpContext httpContext, final String u, final String p, final String s, final String f,
+    private void login(final HttpContext httpContext, final String username, final String password,
             final String expectedLocation)
             throws Exception {
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost(loginActionUrl);
         List<NameValuePair> parameters = new ArrayList<NameValuePair>();
-        parameters.add(new BasicNameValuePair("username", u));
-        parameters.add(new BasicNameValuePair("password", p));
-        parameters.add(new BasicNameValuePair("successUrl", s));
-        parameters.add(new BasicNameValuePair("failedUrl", f));
+        parameters.add(new BasicNameValuePair("username", username));
+        parameters.add(new BasicNameValuePair("password", password));
+        parameters.add(new BasicNameValuePair("successUrl", LOGIN_SUCCESS_ALIAS));
+        parameters.add(new BasicNameValuePair("failedUrl", LOGIN_FAILED_ALIAS));
         HttpEntity entity = new UrlEncodedFormEntity(parameters);
         httpPost.setEntity(entity);
         HttpResponse httpResponse = httpClient.execute(httpPost, httpContext);
@@ -225,15 +228,14 @@ public class FormAuthenticationTestComponent {
     }
 
     @Test
-    @TestDuringDevelopment
     public void testAccessHelloPage() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         HttpContext httpContext = new BasicHttpContext();
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 
         hello(httpContext, defaultResourceId);
-        login(httpContext, USERNAME, PASSWORD + PASSWORD, helloUrl, failedUrl, failedUrl);
-        login(httpContext, USERNAME, PASSWORD, helloUrl, failedUrl, helloUrl);
+        login(httpContext, USERNAME, WRONG_PASSWORD, loginFailedUrl);
+        login(httpContext, USERNAME, PASSWORD, loginSuccessUrl);
         hello(httpContext, authenticatedResourceId);
     }
 
