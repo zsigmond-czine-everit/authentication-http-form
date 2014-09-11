@@ -23,12 +23,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.Filter;
+import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.ConfigurationPolicy;
+import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Properties;
 import org.apache.felix.scr.annotations.Property;
 import org.apache.felix.scr.annotations.Reference;
@@ -48,6 +51,10 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.everit.osgi.authentication.context.AuthenticationContext;
 import org.everit.osgi.authentication.simple.SimpleSubject;
 import org.everit.osgi.authentication.simple.SimpleSubjectManager;
@@ -57,23 +64,32 @@ import org.everit.osgi.resource.ResourceService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
-import org.osgi.service.http.HttpService;
 
-@Component(name = "FormAuthenticationTest", immediate = true, configurationFactory = false,
-        policy = ConfigurationPolicy.OPTIONAL)
+@Component(name = "FormAuthenticationTest", metatype = true, configurationFactory = false,
+        policy = ConfigurationPolicy.REQUIRE, immediate = true)
 @Properties({
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, value = "junit4"),
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID, value = "FormAuthenticationTest"),
-        @Property(name = "httpService.target", value = "(org.osgi.service.http.port=*)"),
         @Property(name = "simpleSubjectManager.target"),
         @Property(name = "resourceService.target"),
-        @Property(name = "authenticationContext.target")
+        @Property(name = "authenticationContext.target"),
+        @Property(name = "helloWorldServlet.target"),
+        @Property(name = "belloWorldServlet.target"),
+        @Property(name = "formAuthenticationServlet.target"),
+        @Property(name = "sessionAuthenticationFilter.target")
 })
 @Service(value = FormAuthenticationTestComponent.class)
 public class FormAuthenticationTestComponent {
 
-    @Reference(bind = "setHttpService")
-    private HttpService httpService;
+    private static final String LOGIN_ACTION = "/login-action";
+
+    private static final String BELLO_SERVLET_ALIAS = "/bello";
+
+    private static final String HELLO_SERVLET_ALIAS = "/hello";
+
+    private static final String USERNAME = "Aladdin";
+
+    private static final String PASSWORD = "open sesame";
 
     @Reference(bind = "setSimpleSubjectManager")
     private SimpleSubjectManager simpleSubjectManager;
@@ -84,17 +100,25 @@ public class FormAuthenticationTestComponent {
     @Reference(bind = "setAuthenticationContext")
     private AuthenticationContext authenticationContext;
 
-    private int port;
+    @Reference(bind = "setHelloWorldServlet")
+    private Servlet helloWorldServlet;
+
+    @Reference(bind = "setBelloWorldServlet")
+    private Servlet belloWorldServlet;
+
+    @Reference(bind = "setFormAuthenticationServlet")
+    private Servlet formAuthenticationServlet;
+
+    @Reference(bind = "setSessionAuthenticationFilter")
+    private Filter sessionAuthenticationFilter;
+
+    private Server testServer;
 
     private String helloUrl;
 
     private String failedUrl;
 
     private String loginActionUrl;
-
-    private String username = "Aladdin";
-
-    private String password = "open sesame";
 
     private long authenticatedResourceId;
 
@@ -103,16 +127,41 @@ public class FormAuthenticationTestComponent {
     @Activate
     public void activate(final BundleContext context, final Map<String, Object> componentProperties)
             throws Exception {
-        helloUrl = "http://localhost:" + port + "/hello";
-        failedUrl = "http://localhost:" + port + "/bello";
-        loginActionUrl = "http://localhost:" + port + "/login-action";
+        testServer = new Server(0);
+        ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        testServer.setHandler(servletContextHandler);
+
+        servletContextHandler.addFilter(
+                new FilterHolder(sessionAuthenticationFilter), "/*", null);
+        servletContextHandler.addServlet(
+                new ServletHolder("helloWorldServlet", helloWorldServlet), HELLO_SERVLET_ALIAS);
+        servletContextHandler.addServlet(
+                new ServletHolder("belloWorldServlet", belloWorldServlet), BELLO_SERVLET_ALIAS);
+        servletContextHandler.addServlet(
+                new ServletHolder("formAuthenticationServlet", formAuthenticationServlet), LOGIN_ACTION);
+
+        testServer.start();
+
+        String testServerURI = testServer.getURI().toString();
+        String testServerURL = testServerURI.substring(0, testServerURI.length() - 1);
+
+        helloUrl = testServerURL + HELLO_SERVLET_ALIAS;
+        failedUrl = testServerURL + BELLO_SERVLET_ALIAS;
+        loginActionUrl = testServerURL + LOGIN_ACTION;
 
         long resourceId = resourceService.createResource();
-        simpleSubjectManager.delete(username);
-        SimpleSubject simpleSubject = simpleSubjectManager.create(resourceId, username, password);
+        simpleSubjectManager.delete(USERNAME);
+        SimpleSubject simpleSubject = simpleSubjectManager.create(resourceId, USERNAME, PASSWORD);
         authenticatedResourceId = simpleSubject.getResourceId();
         defaultResourceId = authenticationContext.getDefaultResourceId();
-        Thread.sleep(5000); // FIXME waiting for the whiteboard pattern to register the filters and servlets
+    }
+
+    @Deactivate
+    public void deactivate() throws Exception {
+        if (testServer != null) {
+            testServer.stop();
+            testServer.destroy();
+        }
     }
 
     private void hello(final HttpContext httpContext, final long expectedResourceId)
@@ -151,15 +200,24 @@ public class FormAuthenticationTestComponent {
         this.authenticationContext = authenticationContext;
     }
 
-    public void setHttpService(final HttpService httpService, final Map<String, Object> properties) {
-        this.httpService = httpService;
-        port = Integer.valueOf((String) properties.get("org.osgi.service.http.port"));
-        port--; // TODO port must be decremented because the port of the Server is less than the value of the service
-        // portperty queried above
+    public void setBelloWorldServlet(final Servlet belloWorldServlet) {
+        this.belloWorldServlet = belloWorldServlet;
+    }
+
+    public void setFormAuthenticationServlet(final Servlet formAuthenticationServlet) {
+        this.formAuthenticationServlet = formAuthenticationServlet;
+    }
+
+    public void setHelloWorldServlet(final Servlet helloWorldServlet) {
+        this.helloWorldServlet = helloWorldServlet;
     }
 
     public void setResourceService(final ResourceService resourceService) {
         this.resourceService = resourceService;
+    }
+
+    public void setSessionAuthenticationFilter(final Filter sessionAuthenticationFilter) {
+        this.sessionAuthenticationFilter = sessionAuthenticationFilter;
     }
 
     public void setSimpleSubjectManager(final SimpleSubjectManager simpleSubjectManager) {
@@ -174,8 +232,8 @@ public class FormAuthenticationTestComponent {
         httpContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 
         hello(httpContext, defaultResourceId);
-        login(httpContext, username, password + password, helloUrl, failedUrl, failedUrl);
-        login(httpContext, username, password, helloUrl, failedUrl, helloUrl);
+        login(httpContext, USERNAME, PASSWORD + PASSWORD, helloUrl, failedUrl, failedUrl);
+        login(httpContext, USERNAME, PASSWORD, helloUrl, failedUrl, helloUrl);
         hello(httpContext, authenticatedResourceId);
     }
 

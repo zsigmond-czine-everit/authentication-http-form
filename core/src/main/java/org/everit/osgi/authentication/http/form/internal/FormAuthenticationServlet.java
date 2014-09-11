@@ -69,7 +69,6 @@ public class FormAuthenticationServlet extends HttpServlet {
     @Override
     protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException,
             IOException {
-
         // Get authentication form parameters from the request
         String username = req.getParameter(formParamNameUsername);
         String password = req.getParameter(formParamNamePassword);

@@ -33,38 +33,26 @@ public final class FormAuthenticationConstants {
 
     public static final String PROP_AUTHENTICATION_PROPAGATOR = "authenticationPropagator.target";
 
+    public static final String PROP_AUTHENTICATION_SESSION_ATTRIBUTE_NAMES =
+            "authenticationSessionAttributeNames.target";
+
     public static final String PROP_LOG_SERVICE = "logService.target";
 
     public static final String PROP_FORM_PARAM_NAME_USERNAME = "form.param.name.username";
 
-    public static final String PROP_FORM_PARAM_NAME_PASSWORD = "form.param.name.password";
-
-    public static final String PROP_FORM_PARAM_NAME_SUCCESS_URL = "form.param.name.success.url";
-
-    public static final String PROP_FORM_PARAM_NAME_FAILED_URL = "form.param.name.failed.url";
-
-    public static final String PROP_SESSION_ATTR_NAME_AUTHENTICATED_RESOURCE_ID =
-            "session.attr.name.authenticated.resource.id";
-
-    /**
-     * The default value of the {@link org.apache.felix.http.whiteboard.HttpWhiteboardConstants#ALIAS}.
-     */
-    public static final String DEFAULT_ALIAS = "/login-action";
-
-    /**
-     * The default value of the {@link org.apache.felix.http.whiteboard.HttpWhiteboardConstants#CONTEXT_ID}.
-     */
-    public static final String DEFAULT_CONTEXT_ID = "defaultContext";
-
     public static final String DEFAULT_FORM_PARAM_NAME_USERNAME = "username";
+
+    public static final String PROP_FORM_PARAM_NAME_PASSWORD = "form.param.name.password";
 
     public static final String DEFAULT_FORM_PARAM_NAME_PASSWORD = "password";
 
-    public static final String DEFAULT_FORM_PARAM_NAME_SUCCESS_URL = "successUrl";
+    public static final String PROP_FORM_PARAM_NAME_SUCCESS_URL = "form.param.name.success.url";
 
-    public static final String DEFAULT_FORM_PARAM_NAME_FAILED_URL = "failedUrl";
+    public static final String DEFAULT_FORM_PARAM_NAME_SUCCESS_URL = "/successUrl";
 
-    public static final String DEFAULT_SESSION_PARAM_NAME_AUTHENTICATED_RESOURCE_ID = "authenticated.resource.id";
+    public static final String PROP_FORM_PARAM_NAME_FAILED_URL = "form.param.name.failed.url";
+
+    public static final String DEFAULT_FORM_PARAM_NAME_FAILED_URL = "/failedUrl";
 
     private FormAuthenticationConstants() {
     }
