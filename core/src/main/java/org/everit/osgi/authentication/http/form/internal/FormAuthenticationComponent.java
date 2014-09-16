@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.log.LogService;
 
 @Component(name = FormAuthenticationConstants.SERVICE_FACTORYPID_FORM_AUTHENTICATION, metatype = true,
-        configurationFactory = true, policy = ConfigurationPolicy.REQUIRE)
+        configurationFactory = true, policy = ConfigurationPolicy.REQUIRE, immediate = true)
 @Properties({
         @Property(name = FormAuthenticationConstants.PROP_FORM_PARAM_NAME_USERNAME,
                 value = FormAuthenticationConstants.DEFAULT_FORM_PARAM_NAME_USERNAME),
