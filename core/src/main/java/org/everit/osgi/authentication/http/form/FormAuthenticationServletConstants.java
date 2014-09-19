@@ -17,15 +17,15 @@
 package org.everit.osgi.authentication.http.form;
 
 /**
- * Constants of the Form Authentication component.
+ * Constants of the Form Authentication Servlet component.
  */
-public final class FormAuthenticationConstants {
+public final class FormAuthenticationServletConstants {
 
     /**
-     * The service factory PID of the Form Authentication component.
+     * The service factory PID of the Form Authentication Servlet component.
      */
-    public static final String SERVICE_FACTORYPID_FORM_AUTHENTICATION =
-            "org.everit.osgi.authentication.http.form.FormAuthentication";
+    public static final String SERVICE_FACTORYPID_FORM_AUTHENTICATION_SERVLET =
+            "org.everit.osgi.authentication.http.form.FormAuthenticationServlet";
 
     public static final String PROP_AUTHENTICATOR = "authenticator.target";
 
@@ -46,6 +46,10 @@ public final class FormAuthenticationConstants {
 
     public static final String DEFAULT_FORM_PARAM_NAME_PASSWORD = "password";
 
+    public static final String PROP_SUCCESS_URL = "success.url";
+
+    public static final String DEFAULT_SUCCESS_URL = "/logged-in.html";
+
     public static final String PROP_FORM_PARAM_NAME_SUCCESS_URL = "form.param.name.success.url";
 
     public static final String DEFAULT_FORM_PARAM_NAME_SUCCESS_URL = "successUrl";
@@ -54,7 +58,11 @@ public final class FormAuthenticationConstants {
 
     public static final String DEFAULT_FORM_PARAM_NAME_FAILED_URL = "failedUrl";
 
-    private FormAuthenticationConstants() {
+    public static final String PROP_FAILED_URL = "failed.url";
+
+    public static final String DEFAULT_FAILED_URL = "/failed.html";
+
+    private FormAuthenticationServletConstants() {
     }
 
 }

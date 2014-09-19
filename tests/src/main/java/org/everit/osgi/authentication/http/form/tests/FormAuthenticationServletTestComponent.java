@@ -64,11 +64,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-@Component(name = "FormAuthenticationTest", metatype = true, configurationFactory = false,
+@Component(name = "FormAuthenticationServletTest", metatype = true, configurationFactory = false,
         policy = ConfigurationPolicy.REQUIRE, immediate = true)
 @Properties({
         @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TESTRUNNER_ENGINE_TYPE, value = "junit4"),
-        @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID, value = "FormAuthenticationTest"),
+        @Property(name = TestRunnerConstants.SERVICE_PROPERTY_TEST_ID, value = "FormAuthenticationServletTest"),
         @Property(name = "simpleSubjectManager.target"),
         @Property(name = "resourceService.target"),
         @Property(name = "authenticationContext.target"),
@@ -76,8 +76,8 @@ import org.osgi.framework.BundleContext;
         @Property(name = "formAuthenticationServlet.target"),
         @Property(name = "sessionAuthenticationFilter.target")
 })
-@Service(value = FormAuthenticationTestComponent.class)
-public class FormAuthenticationTestComponent {
+@Service(value = FormAuthenticationServletTestComponent.class)
+public class FormAuthenticationServletTestComponent {
 
     private static final String LOGIN_SUCCESS_ALIAS = "/login-success.html";
 
