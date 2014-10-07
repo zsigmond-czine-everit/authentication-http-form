@@ -38,6 +38,7 @@ import org.everit.osgi.authentication.http.session.AuthenticationSessionAttribut
 import org.everit.osgi.authenticator.Authenticator;
 import org.everit.osgi.resource.resolver.ResourceIdResolver;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.log.LogService;
@@ -45,6 +46,8 @@ import org.osgi.service.log.LogService;
 @Component(name = FormAuthenticationServletConstants.SERVICE_FACTORYPID_FORM_AUTHENTICATION_SERVLET, metatype = true,
         configurationFactory = true, policy = ConfigurationPolicy.REQUIRE, immediate = true)
 @Properties({
+        @Property(name = Constants.SERVICE_DESCRIPTION,
+                value = FormAuthenticationServletConstants.DEFAULT_SERVICE_DESCRIPTION),
         @Property(name = FormAuthenticationServletConstants.PROP_FORM_PARAM_NAME_USERNAME,
                 value = FormAuthenticationServletConstants.DEFAULT_FORM_PARAM_NAME_USERNAME),
         @Property(name = FormAuthenticationServletConstants.PROP_FORM_PARAM_NAME_PASSWORD,

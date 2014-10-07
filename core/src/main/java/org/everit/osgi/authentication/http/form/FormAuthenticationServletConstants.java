@@ -21,6 +21,9 @@ package org.everit.osgi.authentication.http.form;
  */
 public final class FormAuthenticationServletConstants {
 
+    public static final String DEFAULT_SERVICE_DESCRIPTION =
+            "Default Form Authentication Servlet";
+
     /**
      * The service factory PID of the Form Authentication Servlet component.
      */
