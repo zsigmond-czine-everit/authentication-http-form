@@ -46,7 +46,7 @@ import org.osgi.service.log.LogService;
 @Component(name = FormAuthenticationServletConstants.SERVICE_FACTORYPID_FORM_AUTHENTICATION_SERVLET, metatype = true,
         configurationFactory = true, policy = ConfigurationPolicy.REQUIRE, immediate = true)
 @Properties({
-        @Property(name = Constants.SERVICE_DESCRIPTION,
+        @Property(name = Constants.SERVICE_DESCRIPTION, propertyPrivate = false,
                 value = FormAuthenticationServletConstants.DEFAULT_SERVICE_DESCRIPTION),
         @Property(name = FormAuthenticationServletConstants.PROP_FORM_PARAM_NAME_USERNAME,
                 value = FormAuthenticationServletConstants.DEFAULT_FORM_PARAM_NAME_USERNAME),
