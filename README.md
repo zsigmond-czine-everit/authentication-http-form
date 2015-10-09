@@ -1,13 +1,7 @@
 authentication-http-form
 ========================
 
-HTML form-based authentication Servlet.
-
-#Component
-The module contains one Declarative Services component. The component can be 
-instantiated multiple times via Configuration Admin. The component registers 
-a **javax.servlet.Servlet** OSGi service to handles form-based authentication 
-requests. The following authentication mechanism is implemeted:
+The following authentication mechanism is implemented:
  - Checks the provided username and password parameters using the 
  [authenticator-api][3].
  - Maps the username to a Resource ID using the [resource-resolver-api][4].
